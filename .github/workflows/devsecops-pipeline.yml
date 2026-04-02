@@ -39,11 +39,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          docker build -t secure-app:latest .
-          docker run --rm aquasec/trivy image \
-            --exit-code 1 --severity CRITICAL \
-            secure-app:latest
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'secure-app:latest'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL'
+      - run: docker build -t secure-app:latest .
 
   deploy:
     needs: container-scan
