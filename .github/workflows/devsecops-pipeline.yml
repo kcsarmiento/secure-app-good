@@ -1,0 +1,52 @@
+name: DevSecOps Pipeline
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt
+
+  unit-tests:
+    needs: dependency-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: pytest tests/ -v
+
+  docker-build:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t secure-app:${{ github.sha }} .
+
+  container-scan:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          docker build -t secure-app:latest .
+          docker run --rm aquasec/trivy image \
+            --exit-code 1 --severity CRITICAL \
+            secure-app:latest
+
+  deploy:
+    needs: container-scan
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deployment successful to production!"
