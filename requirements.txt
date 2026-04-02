@@ -1,0 +1,6 @@
+Flask==3.0.3
+flask-limiter==3.7.0
+gunicorn==22.0.0
+Werkzeug==3.0.3
+pytest==8.2.2
+pip-audit==2.7.3
